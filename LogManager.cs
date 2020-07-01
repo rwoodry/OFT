@@ -13,7 +13,7 @@ public class LogManager : MonoBehaviour
     string FILE_NAME = "test";
     string OBJ_FILE_NAME = "test";
     private GameObject object31, object32;
-    public static Vector3 playerPos;
+    public Vector3 playerPos;
     public Vector3 playerRot;
     private FirstPersonController fps;
     private static bool created = false;
@@ -23,23 +23,24 @@ public class LogManager : MonoBehaviour
     public Vector3 playerStart;
     public static float delayTime;
     public Randomizev2 m_Randomizev2;
-    public static float totalDistanceTraveled = 0f;
+    public float totalDistanceTraveled = 0f;
     public float totalDegreesRotatedY = 0f;
     public float totalDegreesRotatedW = 0f;
-    public static float tdrAngle = 0f;
+    public float tdrAngle = 0f;
     public float avgSpeed = 0f;
     public float sumSpeed = 0f;
     public int cpdIteration = 0;
-    public static Vector3 lastPosition = Vector3.zero;
+    public Vector3 lastPosition = Vector3.zero;
     public Vector3 lastRotation, lastAngle, playerRotAngle;
     // public Text targetText;
     public static float radiusThreshold = 5;
     public static string targetName;
+    public static string positionData = "";
+    public static string responseData = "";
     public static bool newTrial = false;
     public bool target_visible;
-    private string posTextFile = "";
-    public static string objTextFile = "";
-
+    public static string ipAddress = "";
+    public string inputDomain = "spatialneuroscience.bio.uci.edu/OFT";
 
 
     // Start is called before the first frame update
@@ -48,6 +49,8 @@ public class LogManager : MonoBehaviour
         // Call the CollectPositionData() Method Once every 1/10th of a second (10Hz)
         InvokeRepeating("CollectPositionData", 0f, 0.1f);
         m_Randomizev2 = GameObject.FindObjectOfType(typeof(Randomizev2)) as Randomizev2;
+        ipAddress = "http://" + inputDomain + "/OFTreceipt.php";
+        Debug.Log("IPADDRESS UPON LOAD: " + ipAddress);
 
 
     }
@@ -64,11 +67,23 @@ public class LogManager : MonoBehaviour
 
     IEnumerator sendPosTexttoFile()
     {
+        // Hard write to folder
+        StreamWriter sw = File.AppendText(FILE_NAME);
+        if (new FileInfo(FILE_NAME).Length == 0)
+        {
+            sw.WriteLine("pos_x, pos_z, rot_y, run_time, trial_time, target_obj, trial_level, delta_target, " +
+                "delta_start, speed, tot_dist, tot_rot_y, target_visible");
+        }
+        sw.WriteLine(positionData);
+        sw.Close();
+
+        // PHP write to folder
         bool successful = true;
         WWWForm form = new WWWForm();
-        form.AddField("input", posTextFile);
+        form.AddField("input", positionData);
         form.AddField("filename", ParticipantLog.file_name_pos);
-        WWW www = new WWW("http://localhost:9000/OFTreceipt.php", form);
+   
+        WWW www = new WWW(ipAddress, form);
 
         yield return www;
         if (www.error != null)
@@ -84,22 +99,23 @@ public class LogManager : MonoBehaviour
 
     IEnumerator sendObjTexttoFile()
     {
-        bool successful = true;
-        WWWForm form2 = new WWWForm();
-        form2.AddField("input2", objTextFile);
-        form2.AddField("filename2", ParticipantLog.file_name_obj);
-        WWW www2 = new WWW("http://localhost:9000/OFTreceipt_obj.php", form2);
-
-        /*StreamWriter writedist = File.AppendText(OBJ_FILE_NAME);
+        // Hard write to folder
+        StreamWriter writedist = File.AppendText(OBJ_FILE_NAME);
         if (new FileInfo(OBJ_FILE_NAME).Length == 0)
         {
             writedist.WriteLine("target_obj, trial_level, start_x, start_z, start_rot_y, end_x, end_z, end_rot_y, " +
                 "delta_start, delta_target, run_time, completion_time," +
                 "tot_dist, tot_rot_y, sl_dist, efficiency, avg_speed");
         }
-        writedist.WriteLine(objTextFile);
+        writedist.WriteLine(responseData);
+        writedist.Close();
 
-        writedist.Close();*/
+        // PHP write to folder
+        bool successful = true;
+        WWWForm form2 = new WWWForm();
+        form2.AddField("input2", responseData);
+        form2.AddField("filename2", ParticipantLog.file_name_obj);
+        WWW www2 = new WWW(ipAddress, form2);
 
         yield return www2;
         if (www2.error != null)
@@ -127,15 +143,6 @@ public class LogManager : MonoBehaviour
         float deltaTarget = Vector3.Distance(target.transform.position, fps.transform.position);
         float deltaStart = Vector3.Distance(GameObject.FindWithTag("spawn").transform.position, fps.transform.position);
 
-
-
-        // Initiate writing [particpant #]_position.txt, if no data is present, write a header line containing variable names
-    /*    StreamWriter sw = File.AppendText(FILE_NAME);
-        if (new FileInfo(FILE_NAME).Length == 0)
-        {
-            sw.WriteLine("pos_x, pos_z, rot_y, run_time, trial_time, target_obj, trial_level, delta_target, " +
-                "delta_start, speed, tot_dist, tot_rot_y, target_visible");
-        }*/
         
         if (GameObject.FindWithTag("target").name == "Bucket_clean")
         {
@@ -146,7 +153,7 @@ public class LogManager : MonoBehaviour
         }
         ;
 
-        posTextFile += playerPos.x + "," + playerPos.z + "," +
+        positionData += playerPos.x + "," + playerPos.z + "," +
             playerRot.y + "," +
             Time.time + "," + (Time.time - Randomizev2.startTime) + "," +
             target.name + "," +
@@ -154,26 +161,19 @@ public class LogManager : MonoBehaviour
             deltaTarget + "," + deltaStart + "," +
             fps.m_Speed + "," + totalDistanceTraveled + "," +
             tdrAngle + ", " + target_visible + "\n";
+        
 
-        /*sw.WriteLine(posTextFile);
-        sw.Close();*/
-        
-        
     }
 
     void CollectResponseData()
     {
-        
         target = GameObject.FindWithTag("target");
         spawn = GameObject.FindWithTag("spawn");
-        totalDegreesRotatedY = tdrAngle;
-
 
         // Upon response event from participant, record data variables to #_responses:
 
         float slDist = Vector3.Distance(target.transform.position, spawn.transform.position);
-
-        objTextFile = targetName + "," + SceneManager.GetActiveScene().name + "," +
+        responseData = target.name + "," + SceneManager.GetActiveScene().name + "," +
             spawn.transform.position.x + "," + spawn.transform.position.z + "," +
             spawn.transform.eulerAngles.y + "," +
             fps.transform.position.x + "," + fps.transform.position.z + "," +
@@ -181,12 +181,11 @@ public class LogManager : MonoBehaviour
             Vector3.Distance(spawn.transform.position, fps.transform.position) + "," +
             Vector3.Distance(target.transform.position, fps.transform.position) + "," +
             Time.time + "," + (Time.time - Randomizev2.startTime) + "," +
-            totalDistanceTraveled + "," + totalDegreesRotatedY + "," +
+            totalDistanceTraveled + "," + tdrAngle + "," +
             slDist + "," + (totalDistanceTraveled / slDist) + "," + avgSpeed + "\n";
 
         StartCoroutine(sendObjTexttoFile());
         StartCoroutine(sendPosTexttoFile());
-        Debug.Log(objTextFile);
 
         // Check to see if we are in testing phase (test trials), if so, set trial phase to 2 (uncollected data)
         if(ParticipantLog.trialPhase != 3)
@@ -194,13 +193,15 @@ public class LogManager : MonoBehaviour
             ParticipantLog.trialPhase = 2;
         }
         
+
+        
     }
 
 
     // Update is called once per frame
     void Update()
     {
-        
+
         fps = FindObjectOfType<FirstPersonController>();
         
         // With each update, obtain necessary data
@@ -213,20 +214,20 @@ public class LogManager : MonoBehaviour
         if (newTrial)
         {
             spawn = GameObject.FindWithTag("spawn");
-            
+
             lastPosition = spawn.transform.position;
             lastAngle = spawn.transform.forward;
             avgSpeed = 0f;
             sumSpeed = 0f;
             cpdIteration = 0;
-            posTextFile = "";
-            
+            positionData = "";
+
             // targetText = GameObject.FindObjectOfType<Text>();
             target = GameObject.FindWithTag("target");
-            Debug.Log(target.name);
             targetName = target.name;
             totalDistanceTraveled = 0;
             tdrAngle = 0;
+/*            lastPosition = Vector3.zero;*/
             sumSpeed = 0f;
             avgSpeed = 0f;
             cpdIteration = 0;
@@ -245,9 +246,6 @@ public class LogManager : MonoBehaviour
                     break;
 
             }
-            // InvokeRepeating("CollectPositionData", 0f, 0.1f);
-            Debug.Log(spawn.transform.position);
-            Debug.Log(playerPos);
             // targetText.text = targetName;
             // targetText.color = Color.black;
             newTrial = false;
@@ -270,29 +268,28 @@ public class LogManager : MonoBehaviour
         lastAngle = playerRotAngle;
 
         target = GameObject.FindWithTag("target");
-       
 
 
         // Upon initial trial load, set file name to participant number entered on launch
         if (FILE_NAME == "test" && OBJ_FILE_NAME == "test")
         {
             FILE_NAME = ParticipantLog.user + "_position.csv";
-            OBJ_FILE_NAME = ParticipantLog.user + "_trial.csv";
-          
+            OBJ_FILE_NAME = ParticipantLog.user + "_objdistance.csv";
+            Debug.Log("FN: " + FILE_NAME);
             
         }
 
 
         if (Input.GetKeyDown(KeyCode.Return))
         {
-      
+            Debug.Log("SL: " + ParticipantLog.trialPhase);
+
             // Trial phase 2: Learn & Practice trials only. It means that the first phase has passed and the participant pressed the first Enter. This phase asks for confirmation before moving on.
             if (ParticipantLog.trialPhase == 2)
             {
                 m_Randomizev2.NextScene();
                 
-
-
+                
 
             }
             // Trial phase 1: Learn & Practice trials only. This is where OFT is waiting for the participant to respond with the first Enter press.
@@ -343,10 +340,6 @@ public class LogManager : MonoBehaviour
             {
                 CollectResponseData();
                 m_Randomizev2.NextScene();
-                
-
-
-
             }
         }
     }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
+using System;
+using System.Net;
 using TMPro;
 
 
@@ -17,6 +19,7 @@ public class ParticipantLog : MonoBehaviour
     public static bool readyForNextTrial = false;
     public Randomizev2 m_Randomizev2;
     public static int trialPhase = 1;
+    public string rcode = "";
     
     
 
@@ -54,11 +57,12 @@ public class ParticipantLog : MonoBehaviour
         Debug.Log("Check check: " + user);
         file_name_pos = user + "_position.csv";
         file_name_obj = user + "_objdistance.csv";
+
         if (File.Exists(file_name_pos))
         {
             Debug.Log("File exists");
-            overwriteButton.gameObject.SetActive(true);
-            appendButton.gameObject.SetActive(true);
+/*            overwriteButton.gameObject.SetActive(true);
+            appendButton.gameObject.SetActive(true);*/
             fileExists.gameObject.SetActive(true);
 
         } else
@@ -67,6 +71,8 @@ public class ParticipantLog : MonoBehaviour
             m_Randomizev2.NextScene();
             Debug.Log("Success!");
         }
+
+
 
     }
 

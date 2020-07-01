@@ -27,8 +27,8 @@ public class Randomizev2 : MonoBehaviour
     private bool instructions = false;
     private bool practiceInstructionsViewed = false;
     private bool testInstructionsViewed = false;
-
-
+    public bool skipStart = true;
+    private bool breakplace = false;
     void Start()
     {
 
@@ -38,30 +38,38 @@ public class Randomizev2 : MonoBehaviour
         // Check to see if Learning trials have been completed, if not, 
         // select the next learning trial in sequential order.
 
-        if (learnTrialsCompleted && practiceTrialsCompleted && testInstructionsViewed)
+        if (skipStart || (learnTrialsCompleted && practiceTrialsCompleted && testInstructionsViewed))
         {
             ParticipantLog.trialPhase = 3;
             // While levels completed do not reach max trials, randomly select without replacement
             // the next testing trial
 
             // Display test instructions if they haven't been viewed already
-
-                while (levels.Count != numlevel)
+            if (OFT_COMPLETE) { 
+                nextLevel = 37; 
+            } 
+            else
+            {
+                while (levels.Count != numlevel + 1)
                 {
-                    int randNum = UnityEngine.Random.Range(1, numlevel+1);
+                    int randNum = UnityEngine.Random.Range(1, numlevel + 1);
                     //Debug.Log(randNum + " = generated");
                     if (levels.Add(randNum))
                     {
                         nextLevel = randNum + 8;
                         Debug.Log("Trial level: " + randNum + " picked");
+                        Debug.Log("LEVEL COUNT: " + levels.Count.ToString());
 
                         if (levels.Count == numlevel)
                         {
                             OFT_COMPLETE = true;
+                            Debug.Log("OFT IS COMPLETE!");
                         }
+                        if (breakplace) { }
                         break;
                     }
                 }
+            }
             
             
         } 
@@ -160,22 +168,16 @@ public class Randomizev2 : MonoBehaviour
     }
     public IEnumerator PauseGame()
     {
-        
         SceneManager.LoadScene("Fixation");
+        Debug.Log("SHOOT");
         yield return new WaitForSeconds(3);
         SceneManager.LoadScene(nextLevel);
-
-
-
     }
 
     public void NextScene()
     {
-        Debug.Log("NS");
         LevelPick();
         StartPause();
-        
-
         
 
         StreamWriter writelevel = File.AppendText(FILE_NAME);
@@ -187,7 +189,7 @@ public class Randomizev2 : MonoBehaviour
 
         if (nextLevel == currentLevel)
         {
-            TipboxManager.text_tip = "YOU ARE DONE. PRESS Ctrl+P TO EXIT PILOT TEST.";
+            TipboxManager.text_tip = "YOU ARE DONE. PRESS ESC TO EXIT PILOT TEST.";
         } else
         {
             currentLevel = nextLevel;
@@ -200,14 +202,12 @@ public class Randomizev2 : MonoBehaviour
         {
             ParticipantLog.trialPhase = 1;
         }
-
         LogManager.newTrial = true;
-        Debug.Log(LogManager.objTextFile);
+        
+        
 
-
-
-
-
+               
+        
     }
 
 }

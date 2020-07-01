@@ -6,7 +6,7 @@ public class TipboxManager : MonoBehaviour
 {
     public string text_targetobj = "Test";
     public Rect windowRect = new Rect(0, 0, Screen.width, Screen.height);
-    public string text_help = "- WASD to move \n- SHIFT to run \n- ENTER when at object's center";
+    public string text_help = "- Use MOUSE & WASD to move \n- hold SHIFT to run \n- press ENTER at object's center";
     public static string text_tip = "";
     private int height = (int)Mathf.Round(Screen.height / 50);
     private int width = (int)Mathf.Round(Screen.width / 50);
@@ -17,13 +17,13 @@ public class TipboxManager : MonoBehaviour
     void Start()
     {
         windowRect = new Rect(0, 0, Mathf.Round(Screen.width /6) , Mathf.Round(Screen.height/7));
+        text_help = "- Use MOUSE & WASD to move \n- hold SHIFT to run \n- press ENTER at object's center";
     }
 
     // Update is called once per frame
     void Update()
     {
         text_targetobj = LogManager.targetName;
-        
     }
 
     private void OnGUI()
@@ -48,5 +48,10 @@ public class TipboxManager : MonoBehaviour
         myStyle.fontStyle = FontStyle.BoldAndItalic;
         myStyle.fontSize = height + 5;
         GUILayout.Label(text_tip, myStyle);
+
+        // Debug Display position data. Uncomment to enable
+/*        myStyle.fontStyle = FontStyle.BoldAndItalic;
+        myStyle.fontSize = height + 5;
+        GUILayout.Label(LogManager.positionData.Replace(",", "\n"), myStyle);*/
     }
 }
