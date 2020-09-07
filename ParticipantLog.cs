@@ -6,6 +6,7 @@ using System.IO;
 using System;
 using System.Net;
 using TMPro;
+using System.Linq;
 
 
 public class ParticipantLog : MonoBehaviour
@@ -20,8 +21,11 @@ public class ParticipantLog : MonoBehaviour
     public Randomizev2 m_Randomizev2;
     public static int trialPhase = 1;
     public string rcode = "";
-    
-    
+    private static System.Random random = new System.Random();
+    public static string token_OFT = "";
+
+
+
 
 
     // Start is called before the first frame update
@@ -29,8 +33,11 @@ public class ParticipantLog : MonoBehaviour
     {
         userNameInputText = canvas.transform.Find("InputField/Text").GetComponent<Text>();
         m_Randomizev2 = GameObject.FindObjectOfType(typeof(Randomizev2)) as Randomizev2;
-        overwriteButton.onClick.AddListener(OverwriteFile);
-        appendButton.onClick.AddListener(AppendFile);
+        //overwriteButton.onClick.AddListener(OverwriteFile);
+        //appendButton.onClick.AddListener(AppendFile);
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        token_OFT = new string(Enumerable.Repeat(chars, 8).Select(s => s[random.Next(s.Length)]).ToArray());
+
 
 
         /*var input = gameObject.GetComponent<InputField>();
@@ -49,14 +56,15 @@ public class ParticipantLog : MonoBehaviour
             
             SubmitID();
         }
+        Debug.Log(token_OFT);
     }
 
     public void SubmitID()
     {
         user = userNameInputText.text;
         Debug.Log("Check check: " + user);
-        file_name_pos = user + "_position.csv";
-        file_name_obj = user + "_objdistance.csv";
+        file_name_pos = user + "_" + token_OFT + "_position.csv";
+        file_name_obj = user + "_" + token_OFT + "_objdistance.csv";
 
         if (File.Exists(file_name_pos))
         {

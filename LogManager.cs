@@ -273,8 +273,8 @@ public class LogManager : MonoBehaviour
         // Upon initial trial load, set file name to participant number entered on launch
         if (FILE_NAME == "test" && OBJ_FILE_NAME == "test")
         {
-            FILE_NAME = ParticipantLog.user + "_position.csv";
-            OBJ_FILE_NAME = ParticipantLog.user + "_objdistance.csv";
+            FILE_NAME = ParticipantLog.user + "_"+ ParticipantLog.token_OFT + "_position.csv";
+            OBJ_FILE_NAME = ParticipantLog.user + "_" + ParticipantLog.token_OFT + "_objdistance.csv";
             Debug.Log("FN: " + FILE_NAME);
             
         }
