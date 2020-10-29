@@ -4,7 +4,7 @@
 library(tidyverse)
 
 # Set working directory
- working_dir <- "~/R/Hellman"
+working_dir <- "~/R/Hellman"
 
 # Quality Checks
 
@@ -14,7 +14,7 @@ qcheck_OFT <- function(w_dir = working_dir){
   # Set working directory containing OFT output files
   setwd(w_dir)
   
-  # List of ilenames with trial data (objdistance.csv)
+  # List of filenames with trial data (objdistance.csv)
   filenames <- list.files()[grepl("objdistance.csv", list.files())]
   print("files obtained")
   
@@ -34,11 +34,10 @@ qcheck_OFT <- function(w_dir = working_dir){
   for (i in 1:length(filenames)){
     print(paste("started ", filenames[i]))
     # Split filename by "_" and assign the 6th element (worker ID) to vector
-    worker_ID <- c(worker_ID, strsplit(filenames[i], "_")[[1]][6])
+    worker_ID <- c(worker_ID, strsplit(filenames[i], "_")[[1]][1])
     
     # Split and assign the 7th element (token) to vector
-    token_ID <- c(token_ID, strsplit(filenames[i], "_")[[1]][7])
-    
+    token_ID <- c(token_ID, strsplit(strsplit(filenames[i], "_")[[1]][2]))
     
     # Load ith objdistance file
     file <- read.csv(filenames[i], header = FALSE)
@@ -50,7 +49,7 @@ qcheck_OFT <- function(w_dir = working_dir){
     # Check to see if practice trials were completed
     practice_complete <- c(practice_complete, 
                            sum(grepl("Practice", unique(file[,2]))) == 4)
-
+    
     # Check to see i test trials were completed
     trials_complete <- c(trials_complete, 
                          sum(grepl("Test", unique(file[,2]))) == 24)
@@ -90,7 +89,7 @@ qcheck_OFT <- function(w_dir = working_dir){
     print(paste("Completed ", filenames[i]))
   }
   
-  print(mean(comp_time[1:11], na.rm = TRUE))
+
   
   QualityCheckTable <- cbind(worker_ID, token_ID, learn_complete, 
                              practice_complete, trials_complete, 
@@ -98,10 +97,73 @@ qcheck_OFT <- function(w_dir = working_dir){
                              avg_dist_complete, does_rob_approve, comp_time)
   date_string <- paste(strsplit(date(), " ")[[1]][c(2,3,5)], collapse = "_")
   
-  file_output_name <- paste0("QC_OFT_", date_string, ".csv")
+  file_output_name <- paste0("OFT-QC_", date_string, ".csv")
   
   write.csv(QualityCheckTable, file_output_name, row.names = FALSE)
   
   
 }
 
+qcheck_SOT <- function(working_dir){
+  # Set working directory containing OFT output files
+  
+  # List of filenames with trial data (objdistance.csv)
+  setwd(working_dir)
+  filenames <- list.files()[grepl("SOT_", list.files())]
+  
+  worker_ID <- c()
+  token_ID <- c()
+
+  SOT_num_trialsComplete <- c()
+  SOT_sd_responseAngle <- c()
+  SOT_mean_angularError <- c()
+  SOT_mean_reactionTime <- c()
+  SOT_mean_responseTime <- c()
+  SOT_total_runtime <- c()
+  
+  SOT_does_rob_approve <- c()
+  
+  for (i in 1:length(filenames)){
+    print(paste("started ", filenames[i]))
+    # Split filename by "_" and assign the 1st element (worker ID) to vector
+    worker_ID <- c(worker_ID, strsplit(filenames[i], "_")[[1]][2])
+    
+    # Split and assign the 2nd element (token) to vector
+    token_ID <- c(token_ID, strsplit(strsplit(filenames[i], "_")[[1]][3], ".csv")[[1]][1])
+    
+    # Load ith SOT file
+    file <- read.csv(filenames[i])
+    
+    SOT_num_trialsComplete <- c(SOT_num_trialsComplete, nrow(file))
+    SOT_sd_responseAngle <- c(SOT_sd_responseAngle, sd(file[which(file$trialType == ' Test'), 'responseAngle'], na.rm = TRUE))
+    SOT_mean_angularError <- c(SOT_mean_angularError, mean(file[which(file$trialType == ' Test'), 'angularError'], na.rm = TRUE))
+    SOT_mean_reactionTime <- c(SOT_mean_reactionTime, mean(file[which(file$trialType == ' Test'), 'reactionTime'], na.rm = TRUE))
+    SOT_mean_responseTime <- c(SOT_mean_responseTime, mean(file[which(file$trialType == ' Test'), 'responseTime'], na.rm = TRUE))
+    SOT_total_runtime <- c(SOT_total_runtime, file$endtime[length(file$endTime)])
+    
+    well_does_he <- ""
+    
+    if (nrow(file) <= 4 ){
+      well_does_he <- 'NO'
+    } else if (sd(file[which(file$trialType == ' Test'), 'responseAngle'], na.rm = TRUE) < 50 |
+               mean(file[which(file$trialType == ' Test'),'angularError'], na.rm = TRUE) > 70 |
+               mean(file[which(file$trialType == ' Test'),'responseTime'], na.rm = TRUE) < 7){
+      well_does_he <- 'MAYBE'
+    } else {
+      well_does_he <- 'YES'
+    }
+    SOT_does_rob_approve <- c(SOT_does_rob_approve, well_does_he)
+  }
+  
+  SOT_QualityCheckTable <- cbind(worker_ID, token_ID, SOT_num_trialsComplete, 
+                                 SOT_sd_responseAngle, SOT_mean_angularError,
+                                 SOT_mean_reactionTime, SOT_mean_responseTime,
+                                 SOT_total_runtime, SOT_does_rob_approve)
+
+  date_string <- paste(strsplit(date(), " ")[[1]][c(2,3,5)], collapse = "_")
+  
+  file_output_name <- paste0("SOT-QC_", date_string, ".csv")
+  
+  write.csv(SOT_QualityCheckTable, file_output_name, row.names = FALSE)
+  
+}
