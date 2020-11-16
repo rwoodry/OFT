@@ -37,7 +37,7 @@ qcheck_OFT <- function(w_dir = working_dir){
     worker_ID <- c(worker_ID, strsplit(filenames[i], "_")[[1]][1])
     
     # Split and assign the 7th element (token) to vector
-    token_ID <- c(token_ID, strsplit(strsplit(filenames[i], "_")[[1]][2]))
+    token_ID <- c(token_ID, strsplit(filenames[i], "_")[[1]][2])
     
     # Load ith objdistance file
     file <- read.csv(filenames[i], header = FALSE)
