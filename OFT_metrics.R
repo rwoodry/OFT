@@ -99,19 +99,19 @@ oft_trialmetrics <- function(oft_conc_data){
     mean_dirchange = calc_mean_dirchange(Subject_ID, token, trial_level),
     sd_dirchange = calc_sd_dirchange(Subject_ID, token, trial_level)
   )
-  write.csv(oft_conc_data, paste0(write_dir, "OFT_trial_master.csv"))
+  write.csv(oft_conc_data, paste0(write_dir, "OFT_trial_master.csv"), row.names = FALSE)
   return(oft_conc_data)
 }
 
-# Pipeline code
-# filenames <- list.files()[grepl("_objdistance.csv", list.files())]
-# print(filenames)
-# oft_data <- oft_concatenate(filenames)
-# print("OFT CONC DONE")
-# oft_data <- oft_trialmetrics(oft_data)
-# print("OFT TM DONE")
 
-# Compile participant data
+filenames <- list.files()[grepl("_objdistance.csv", list.files())]
+print(filenames)
+oft_data <- oft_concatenate(filenames)
+print("oft conc done")
+oft_data <- oft_trialmetrics(oft_data)
+print("oft tm done")
+# 
+
 participant_list <- split(oft_data, as.factor(oft_data$Subject_ID))
 
 
@@ -231,8 +231,16 @@ compile_participantmetrics <- function(participant_list){
     part_data <- c(subj_id, token, oall_means, oall_sds, 
                    chair_means, chair_sds, sball_means, sball_sds, 
                    bucket_means, bucket_sds, cone_means, cone_sds)
+    
+    # Get colnames
+    metrics_names <- colnames(sub_data)[11:19]
+    oall_names <- c(paste0("mean_", metrics_names), paste0("stddev_", metrics_names))
+    object_names <- c(paste0("chair_", oall_names), paste0("sball_", oall_names),
+                      paste0("bucket_", oall_names), paste0("cone_", oall_names))
+    pm_names <- c("Subject_ID", "token", oall_names, object_names)
     part_master <- rbind(part_master, part_data)
-    colnames(part_master)[1:2] <- c("Subject_ID", "token")
+    
+    colnames(part_master) <- pm_names
   }
   write.csv(part_master, paste0(write_dir, "OFT_participant_master.csv"), row.names = FALSE)
   return(part_master)
