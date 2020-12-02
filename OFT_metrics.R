@@ -3,12 +3,13 @@ library(trajr)
 library(matrixStats)
 library(aspace)
 
-working_dir <- "D:/SampleData/Hellman/preliminary/OFT/"
-write_dir <- "D:/SampleData/Hellman/preliminary/"
+working_dir <- "D:/Rob/SNL/Hellman/OFT/"
+write_dir <- "D:/Rob/SNL/Hellman/"
 setwd(working_dir)
 
 oft_concatenate<- function(subj_ids){
   oft_data <- data.frame()
+
   for(i in 1:length(subj_ids)){
     filename <- subj_ids[i]
     subjid <- strsplit(filename, "_")[[1]][1]
@@ -21,7 +22,7 @@ oft_concatenate<- function(subj_ids){
   }
   oft_data <- as.data.frame(oft_data)
   colnames(oft_data)[1:2] <- c("Subject_ID", "token")
-
+  
   return(oft_data)
 }
 
@@ -44,6 +45,8 @@ calc_tortuosity <- function(euc_dist_trav, tot_dist_trav){
 
 calc_mean_dirchange <- function(subjid, token, trial_level){
   mean_dirchange <- c()
+  print("Calculating Mean Directional Change: ")
+  pb <- txtProgressBar(min = 0, max = length(subjid), style = 3)
   for (i in 1:length(subjid)){
     
     posdata <- read.csv(sprintf("%s_%s_position.csv", subjid[i], token[i]))
@@ -59,9 +62,9 @@ calc_mean_dirchange <- function(subjid, token, trial_level){
     } else {
       mdc <- NA
     }
-
+    
     mean_dirchange <- c(mean_dirchange, mdc)
-    print(paste(i, "mean"))
+    setTxtProgressBar(pb, i)
   }
   return(mean_dirchange)
   
@@ -69,6 +72,8 @@ calc_mean_dirchange <- function(subjid, token, trial_level){
 
 calc_sd_dirchange <- function(subjid, token, trial_level){
   sd_dirchange <- c()
+  print("Calculating Standard Deviation of Directional Change: ")
+  pb <- txtProgressBar(min = 0, max = length(subjid), style = 3)
   for (i in 1:length(subjid)){
     posdata <- read.csv(sprintf("%s_%s_position.csv", subjid[i], token[i]))
     names <- "pos_x, pos_z, rot_y, run_time, trial_time, target_obj, trial_level, delta_target, delta_start, speed, tot_dist, tot_rot_y, target_visible"
@@ -83,7 +88,8 @@ calc_sd_dirchange <- function(subjid, token, trial_level){
       sdc <- NA
     }
     sd_dirchange <- c(sd_dirchange, sdc)
-    print(paste(i, "sd"))
+    setTxtProgressBar(pb, i)
+
   }
   return(sd_dirchange)
   
@@ -115,11 +121,12 @@ print("oft tm done")
 participant_list <- split(oft_data, as.factor(oft_data$Subject_ID))
 
 
-
 compile_participantmetrics <- function(participant_list){
   part_master <- c()
+  pb <- txtProgressBar(min = 0, max = length(participant_list), style = 3)
+  print("Compiling Participant Metrics: ")
+
   for (i in 1:length(participant_list)){
-    print(i)
     sub_data <- participant_list[[i]][grepl("TestScene", participant_list[[i]]$trial_level), ]
     
     subj_id <- participant_list[[i]]$Subject_ID[1]
@@ -128,7 +135,7 @@ compile_participantmetrics <- function(participant_list){
     oall_means <- colMeans(as.data.frame(sub_data)[,11:19], na.rm = TRUE)
     bytarget_data <- split(sub_data, sub_data$target_obj)
     
-    if (nrow(sub_data) != 0){
+    if (nrow(sub_data) != 0 & length(names(bytarget_data)) >= 4){
       oall_sds <- colSds(as.matrix(as.data.frame(sub_data)[,11:19]))
       chair_sds <- colSds(as.matrix(bytarget_data$chFolding.A_LOD0[,11:19]))
       sball_sds <- colSds(as.matrix(bytarget_data$'Soccer Ball'[,11:19]))
@@ -241,7 +248,10 @@ compile_participantmetrics <- function(participant_list){
     part_master <- rbind(part_master, part_data)
     
     colnames(part_master) <- pm_names
+    setTxtProgressBar(pb, i)
   }
   write.csv(part_master, paste0(write_dir, "OFT_participant_master.csv"), row.names = FALSE)
   return(part_master)
 }
+
+compile_participantmetrics(participant_list)
