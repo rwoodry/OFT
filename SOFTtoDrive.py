@@ -41,30 +41,13 @@ def upload_SOFTfiles():
 	extension = "csv"
 	os.chdir(path)
 	OFT_filenames = glob.glob('*.{}'.format(extension))
-
 	# Hellman folder ID for OFT
-	f_ID = "1AnzDfGLaZc36PRI5TKBkBSDbF6rwZVel"
-	query_string = "'%s' in parents and trashed=False" % f_ID
-
-
-	# Loop through OFT files
-	for i in OFT_filenames:
-		# If file already exists, overwrite it with the most recent version
-		file_list = drive.ListFile({'q': query_string}).GetList()
-		try:
-			for file1 in file_list:
-				if file1['title'] == i:
-					print("Overwriting file: " + i)
-					file1.Delete()                
-		except:
-			pass
-		# Create file to send to the drive, then upload it
-		f = drive.CreateFile({"parents": [{"kind": "drive#fileLink", "id": f_ID}]})
-		f.SetContentFile(i)
-		f.Upload()
-		print("Uploading file: " + i)
-		f = None
-
+	OFT_folder_ID = "1gThYbi0REw5SFgdv2DB0xR3d1vC89VBF"
+	OFT_shared_ID = "136zAoJbvmplv0aDczGppFAFXYUOCFi9D"
+	
+	# Upload OFT files to regular and shared drives	
+	drive_upload_to_folder(OFT_filenames, OFT_folder_ID, drive)
+	drive_upload_to_folder(OFT_filenames, OFT_shared_ID, drive)
 	print("OFT DATA FILES UPLOADED TO DRIVE")
 
 	# Within SOT file folder, obtain all SOT_filenames
@@ -72,41 +55,48 @@ def upload_SOFTfiles():
 	extension = "csv"
 	os.chdir(path)
 	SOT_filenames = glob.glob('*.{}'.format(extension))
-
 	# Hellman folder ID for SOT
-	f_ID = "1Hty3ph-plJ_prH_tTZVxtNvdawE4PA0q"
-	query_string = "'%s' in parents and trashed=False" % f_ID
-
-	# Loop through SOT files
-	for i in SOT_filenames:
-		# If file already exists, overwrite it with the most recent version
-		file_list = drive.ListFile({'q':query_string}).GetList()
-		try:
-			for file1 in file_list:
-				if file1['title'] == i:
-					print("Overwriting file: " + i)
-					file1.Delete()                
-		except:
-			pass
-		# Create file to send to the drive, then upload it
-		f = drive.CreateFile({"parents": [{"kind": "drive#fileLink", "id": f_ID}]})
-		f.SetContentFile(i)
-		f.Upload()
-		print("Uploading file: " + i)
-		f = None
-
+	SOT_folder_ID = "10Kvhc_fjTM2S4TOfGSx0MMWs0Z8ec7CL"
+	SOT_shared_ID = "1bqmsA12vkAd-xdkVtv18NdgUcj5bmoWf"
+	
+	# Upload SOT files to regular and shared drives
+	drive_upload_to_folder(SOT_filenames, SOT_folder_ID, drive)
+	drive_upload_to_folder(SOT_filenames, SOT_shared_ID, drive)
 	print("SOT DATA FILES UPLOADED TO DRIVE")
 
 # Define function that calls R script to quality check data
 def quality_check_SOFT():
 	subprocess.call("~/Desktop/hellman_QC.R", shell = True)
+	print("QC SOFT DONE")
+
+def drive_upload_to_folder(filenames, folder_id, drive):
+	query_string = "'%s' in parents and trashed=False" % folder_id
+	for i in filenames:
+		# If file already exists, overwrite it with the most recent version
+		file_list = drive.ListFile({'q': query_string}).GetList()
+
+		try:
+			for file1 in file_list:
+				if file1['title'] == i:
+					print("Overwriting file: " + i)
+					file1.Delete()
+		except:
+			pass
+		# Create file to send to the drive, then upload it
+		f = drive.CreateFile({"parents": [{"kind": "drive#fileLink", "id": folder_id}]})
+		f.SetContentFile(i)
+
+		f.Upload()
+
+		print("Uploading file: " + i)
+		f = None
 
 # Initiate first upload when script is called. Keep terminal window open to have the scheduler run.
 upload_SOFTfiles()
 
 # Initiate scheduled upload of OFT files every hour
 scheduler = BlockingScheduler()
-scheduler.add_job(upload_SOFTfiles, 'interval', hours = 1)
+scheduler.add_job(upload_SOFTfiles, 'interval', hours = 5)
 scheduler.start()
 
 quality_check_SOFT()
