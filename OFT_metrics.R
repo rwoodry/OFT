@@ -3,13 +3,13 @@ library(trajr)
 library(matrixStats)
 library(aspace)
 
-working_dir <- "D:/Rob/SNL/Hellman/OFT/"
-write_dir <- "D:/Rob/SNL/Hellman/"
+working_dir <- "C:/Users/17868/Documents/R/Hellman/OFT/"
+write_dir <- "C:/Users/17868/Documents/R/Hellman/"
 setwd(working_dir)
 
 oft_concatenate<- function(subj_ids){
   oft_data <- data.frame()
-
+  
   for(i in 1:length(subj_ids)){
     filename <- subj_ids[i]
     subjid <- strsplit(filename, "_")[[1]][1]
@@ -89,7 +89,7 @@ calc_sd_dirchange <- function(subjid, token, trial_level){
     }
     sd_dirchange <- c(sd_dirchange, sdc)
     setTxtProgressBar(pb, i)
-
+    
   }
   return(sd_dirchange)
   
@@ -125,7 +125,7 @@ compile_participantmetrics <- function(participant_list){
   part_master <- c()
   pb <- txtProgressBar(min = 0, max = length(participant_list), style = 3)
   print("Compiling Participant Metrics: ")
-
+  
   for (i in 1:length(participant_list)){
     sub_data <- participant_list[[i]][grepl("TestScene", participant_list[[i]]$trial_level), ]
     
